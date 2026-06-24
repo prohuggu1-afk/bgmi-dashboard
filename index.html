@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BGMI Dual Stream - Movable & Resizable</title>
+  <title>BGMI Dual Stream - Full Drag & Resize</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
@@ -17,43 +17,41 @@
       position: absolute;
       min-width: 380px;
       min-height: 320px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-      cursor: move;
-      transition: border-color 0.2s;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
     }
     
-    .video-box:hover {
-      border-color: #4ade80;
-    }
+    .video-box:hover { border-color: #4ade80; }
     
     .header {
       background: #1a1a1a;
-      padding: 10px 16px;
+      padding: 12px 16px;
       font-weight: 600;
       text-align: center;
       border-bottom: 1px solid #333;
       user-select: none;
+      cursor: move;
     }
     
-    iframe {
-      width: 100%;
-      height: calc(100% - 48px);
-      border: none;
-    }
+    iframe { width: 100%; height: calc(100% - 48px); border: none; }
     
     .resize-handle {
       position: absolute;
       bottom: 0;
       right: 0;
-      width: 20px;
-      height: 20px;
+      width: 28px;
+      height: 28px;
       cursor: nwse-resize;
-      z-index: 10;
+      z-index: 30;
+      color: #666;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
   </style>
 </head>
 <body class="min-h-screen p-6">
-  <div class="max-w-screen-2xl mx-auto relative h-screen">
+  <div class="max-w-screen-2xl mx-auto relative h-screen" id="workspace">
     <h1 class="text-3xl font-bold text-center mb-6 text-green-400">BGMI DUAL STREAM VIEWER</h1>
 
     <!-- Stream 1 -->
@@ -72,22 +70,27 @@
   </div>
 
   <!-- Controls -->
-  <div class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-zinc-900 border border-zinc-700 rounded-2xl p-5 shadow-2xl z-50 flex gap-4 items-center">
-    <input id="url1" class="bg-black border border-zinc-700 rounded-xl px-4 py-3 w-80" placeholder="Stream 1 YouTube URL">
-    <input id="url2" class="bg-black border border-zinc-700 rounded-xl px-4 py-3 w-80" placeholder="Stream 2 YouTube URL">
-    <button onclick="loadStreams()" class="bg-green-500 hover:bg-green-600 text-black font-bold px-6 py-3 rounded-xl">LOAD</button>
+  <div class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-zinc-900 border border-zinc-700 rounded-2xl p-5 shadow-2xl flex gap-4 items-center z-50">
+    <input id="url1" class="bg-black border border-zinc-700 rounded-xl px-4 py-3 w-80" placeholder="Stream 1 URL">
+    <input id="url2" class="bg-black border border-zinc-700 rounded-xl px-4 py-3 w-80" placeholder="Stream 2 URL">
+    <button onclick="loadStreams()" class="bg-green-500 hover:bg-green-600 text-black font-bold px-6 py-3 rounded-xl">LOAD STREAMS</button>
     <button onclick="playBoth()" class="bg-green-600 hover:bg-green-500 px-6 py-3 rounded-xl font-bold">▶ PLAY BOTH</button>
-    <button onclick="pauseBoth()" class="bg-red-600 hover:bg-red-500 px-6 py-3 rounded-xl font-bold">⏸ PAUSE</button>
+    <button onclick="pauseBoth()" class="bg-red-600 hover:bg-red-500 px-6 py-3 rounded-xl font-bold">⏸ PAUSE BOTH</button>
   </div>
 
   <script>
-    // Make boxes draggable
-    function makeDraggable(element) {
-      let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+    function makeDraggableAndResizable(box) {
+      const header = box.querySelector('.header');
+      const resizeHandle = box.querySelector('.resize-handle');
       
-      element.querySelector('.header').onmousedown = dragMouseDown;
+      let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+      let isResizing = false;
+
+      // Drag to Move
+      header.onmousedown = dragMouseDown;
 
       function dragMouseDown(e) {
+        if (e.target.closest('.resize-handle')) return;
         e.preventDefault();
         pos3 = e.clientX;
         pos4 = e.clientY;
@@ -101,20 +104,53 @@
         pos2 = pos4 - e.clientY;
         pos3 = e.clientX;
         pos4 = e.clientY;
-        element.style.top = (element.offsetTop - pos2) + "px";
-        element.style.left = (element.offsetLeft - pos1) + "px";
+
+        box.style.top = (box.offsetTop - pos2) + "px";
+        box.style.left = (box.offsetLeft - pos1) + "px";
       }
 
       function closeDragElement() {
         document.onmouseup = null;
         document.onmousemove = null;
       }
+
+      // Drag to Resize
+      resizeHandle.onmousedown = resizeMouseDown;
+
+      function resizeMouseDown(e) {
+        e.preventDefault();
+        isResizing = true;
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        document.onmouseup = closeResizeElement;
+        document.onmousemove = resizeElement;
+      }
+
+      function resizeElement(e) {
+        if (!isResizing) return;
+        e.preventDefault();
+        
+        const newWidth = box.offsetWidth + (e.clientX - pos3);
+        const newHeight = box.offsetHeight + (e.clientY - pos4);
+        
+        if (newWidth > 380) box.style.width = newWidth + "px";
+        if (newHeight > 320) box.style.height = newHeight + "px";
+        
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+      }
+
+      function closeResizeElement() {
+        isResizing = false;
+        document.onmouseup = null;
+        document.onmousemove = null;
+      }
     }
 
-    // Initialize drag
+    // Initialize both boxes
     window.onload = () => {
-      makeDraggable(document.getElementById('box1'));
-      makeDraggable(document.getElementById('box2'));
+      makeDraggableAndResizable(document.getElementById('box1'));
+      makeDraggableAndResizable(document.getElementById('box2'));
     };
 
     function getEmbedUrl(url) {
@@ -128,7 +164,7 @@
       const u2 = document.getElementById('url2').value.trim();
       if (u1) document.getElementById('iframe1').src = getEmbedUrl(u1);
       if (u2) document.getElementById('iframe2').src = getEmbedUrl(u2);
-      alert("✅ Streams Loaded! Drag headers to move, drag corners to resize.");
+      alert("✅ Loaded! Drag header to move • Drag corner to resize");
     }
 
     function playBoth() {
