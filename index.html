@@ -3,20 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BGMI Dual Stream</title>
+  <title>BGMI Dual Stream - Movable & Resizable</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
-    body { background: #0a0a0a; color: white; font-family: system-ui, sans-serif; }
+    body { background: #0a0a0a; color: white; font-family: system-ui, sans-serif; overflow: hidden; }
     
     .video-box {
       background: #111;
       border: 2px solid #22c55e;
       border-radius: 12px;
       overflow: hidden;
-      position: relative;
-      resize: both;
-      min-width: 300px;
-      min-height: 300px;
+      position: absolute;
+      min-width: 380px;
+      min-height: 320px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      cursor: move;
       transition: border-color 0.2s;
     }
     
@@ -25,11 +27,12 @@
     }
     
     .header {
-      background: #1f1f1f;
+      background: #1a1a1a;
       padding: 10px 16px;
       font-weight: 600;
       text-align: center;
       border-bottom: 1px solid #333;
+      user-select: none;
     }
     
     iframe {
@@ -37,44 +40,83 @@
       height: calc(100% - 48px);
       border: none;
     }
+    
+    .resize-handle {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 20px;
+      height: 20px;
+      cursor: nwse-resize;
+      z-index: 10;
+    }
   </style>
 </head>
 <body class="min-h-screen p-6">
-  <div class="max-w-7xl mx-auto">
-    <h1 class="text-3xl font-bold text-center mb-8 text-green-400">BGMI DUAL STREAM VIEWER</h1>
+  <div class="max-w-screen-2xl mx-auto relative h-screen">
+    <h1 class="text-3xl font-bold text-center mb-6 text-green-400">BGMI DUAL STREAM VIEWER</h1>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="container">
-      
-      <!-- Stream 1 -->
-      <div class="video-box" style="height: 520px;">
-        <div class="header">STREAM 1 - MAIN MATCH</div>
-        <iframe id="iframe1" allowfullscreen allow="autoplay"></iframe>
-      </div>
-
-      <!-- Stream 2 -->
-      <div class="video-box" style="height: 520px;">
-        <div class="header">STREAM 2 - MAP / OBSERVER</div>
-        <iframe id="iframe2" allowfullscreen allow="autoplay"></iframe>
-      </div>
+    <!-- Stream 1 -->
+    <div class="video-box" id="box1" style="left: 80px; top: 100px; width: 48%; height: 520px;">
+      <div class="header">STREAM 1 - MAIN MATCH</div>
+      <iframe id="iframe1" allowfullscreen allow="autoplay"></iframe>
+      <div class="resize-handle">↘</div>
     </div>
 
-    <!-- Controls -->
-    <div class="mt-8 flex justify-center gap-4">
-      <input id="url1" class="bg-zinc-900 border border-zinc-700 rounded-xl px-5 py-3 w-96" placeholder="Paste Stream 1 YouTube URL">
-      <input id="url2" class="bg-zinc-900 border border-zinc-700 rounded-xl px-5 py-3 w-96" placeholder="Paste Stream 2 YouTube URL">
-      <button onclick="loadStreams()" 
-              class="bg-green-500 hover:bg-green-600 text-black font-bold px-8 py-3 rounded-xl">
-        LOAD STREAMS
-      </button>
-    </div>
-
-    <div class="mt-6 flex justify-center gap-4">
-      <button onclick="playBoth()" class="bg-green-600 hover:bg-green-500 px-8 py-3 rounded-xl font-bold">▶ PLAY BOTH</button>
-      <button onclick="pauseBoth()" class="bg-red-600 hover:bg-red-500 px-8 py-3 rounded-xl font-bold">⏸ PAUSE BOTH</button>
+    <!-- Stream 2 -->
+    <div class="video-box" id="box2" style="left: 52%; top: 100px; width: 48%; height: 520px;">
+      <div class="header">STREAM 2 - MAP / OBSERVER</div>
+      <iframe id="iframe2" allowfullscreen allow="autoplay"></iframe>
+      <div class="resize-handle">↘</div>
     </div>
   </div>
 
+  <!-- Controls -->
+  <div class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-zinc-900 border border-zinc-700 rounded-2xl p-5 shadow-2xl z-50 flex gap-4 items-center">
+    <input id="url1" class="bg-black border border-zinc-700 rounded-xl px-4 py-3 w-80" placeholder="Stream 1 YouTube URL">
+    <input id="url2" class="bg-black border border-zinc-700 rounded-xl px-4 py-3 w-80" placeholder="Stream 2 YouTube URL">
+    <button onclick="loadStreams()" class="bg-green-500 hover:bg-green-600 text-black font-bold px-6 py-3 rounded-xl">LOAD</button>
+    <button onclick="playBoth()" class="bg-green-600 hover:bg-green-500 px-6 py-3 rounded-xl font-bold">▶ PLAY BOTH</button>
+    <button onclick="pauseBoth()" class="bg-red-600 hover:bg-red-500 px-6 py-3 rounded-xl font-bold">⏸ PAUSE</button>
+  </div>
+
   <script>
+    // Make boxes draggable
+    function makeDraggable(element) {
+      let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+      
+      element.querySelector('.header').onmousedown = dragMouseDown;
+
+      function dragMouseDown(e) {
+        e.preventDefault();
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        document.onmouseup = closeDragElement;
+        document.onmousemove = elementDrag;
+      }
+
+      function elementDrag(e) {
+        e.preventDefault();
+        pos1 = pos3 - e.clientX;
+        pos2 = pos4 - e.clientY;
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        element.style.top = (element.offsetTop - pos2) + "px";
+        element.style.left = (element.offsetLeft - pos1) + "px";
+      }
+
+      function closeDragElement() {
+        document.onmouseup = null;
+        document.onmousemove = null;
+      }
+    }
+
+    // Initialize drag
+    window.onload = () => {
+      makeDraggable(document.getElementById('box1'));
+      makeDraggable(document.getElementById('box2'));
+    };
+
     function getEmbedUrl(url) {
       if (!url) return '';
       const match = url.match(/(?:youtu\.be\/|youtube\.com.*v=)([^#\&\?]+)/);
@@ -84,11 +126,9 @@
     function loadStreams() {
       const u1 = document.getElementById('url1').value.trim();
       const u2 = document.getElementById('url2').value.trim();
-      
       if (u1) document.getElementById('iframe1').src = getEmbedUrl(u1);
       if (u2) document.getElementById('iframe2').src = getEmbedUrl(u2);
-      
-      alert("✅ Streams Loaded! Drag corners to resize.");
+      alert("✅ Streams Loaded! Drag headers to move, drag corners to resize.");
     }
 
     function playBoth() {
