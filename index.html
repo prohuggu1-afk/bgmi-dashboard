@@ -3,55 +3,74 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BGMI Pro Analysis Dashboard</title>
+  <title>BGMI Dual Stream</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
-    body { background: #050505; color: white; font-family: system-ui, sans-serif; }
-    .panel { background: #111; border: 2px solid #22c55e; border-radius: 16px; overflow: hidden; resize: both; min-height: 300px; }
-    .header { background: #1a1a1a; padding: 14px 18px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
-    iframe { width: 100%; height: calc(100% - 54px); border: none; }
+    body { background: #0a0a0a; color: white; font-family: system-ui, sans-serif; }
+    
+    .video-box {
+      background: #111;
+      border: 2px solid #22c55e;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+      resize: both;
+      min-width: 300px;
+      min-height: 300px;
+      transition: border-color 0.2s;
+    }
+    
+    .video-box:hover {
+      border-color: #4ade80;
+    }
+    
+    .header {
+      background: #1f1f1f;
+      padding: 10px 16px;
+      font-weight: 600;
+      text-align: center;
+      border-bottom: 1px solid #333;
+    }
+    
+    iframe {
+      width: 100%;
+      height: calc(100% - 48px);
+      border: none;
+    }
   </style>
 </head>
-<body class="p-6 min-h-screen">
-  <div class="max-w-screen-2xl mx-auto">
-    <h1 class="text-4xl font-bold text-center mb-8 text-green-400">BGMI PRO ANALYSIS DASHBOARD</h1>
+<body class="min-h-screen p-6">
+  <div class="max-w-7xl mx-auto">
+    <h1 class="text-3xl font-bold text-center mb-8 text-green-400">BGMI DUAL STREAM VIEWER</h1>
 
-    <div class="flex gap-8">
-      <div class="w-80 bg-zinc-900 rounded-3xl p-6 h-fit border border-zinc-700">
-        <div class="space-y-6">
-          <div>
-            <label class="text-xs text-zinc-400 block mb-2">MAIN MATCH STREAM</label>
-            <input id="url1" class="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3" placeholder="Paste YouTube URL">
-          </div>
-          <div>
-            <label class="text-xs text-zinc-400 block mb-2">MAP / OBSERVER STREAM</label>
-            <input id="url2" class="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3" placeholder="Paste YouTube URL">
-          </div>
-          <button onclick="loadStreams()" class="w-full bg-green-500 hover:bg-green-600 text-black font-bold py-4 rounded-2xl text-lg">LOAD STREAMS</button>
-        </div>
-
-        <div class="mt-8 flex gap-3">
-          <button onclick="playAll()" class="flex-1 bg-green-600 py-3 rounded-2xl font-bold">▶ PLAY BOTH</button>
-          <button onclick="pauseAll()" class="flex-1 bg-red-600 py-3 rounded-2xl font-bold">⏸ PAUSE BOTH</button>
-        </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="container">
+      
+      <!-- Stream 1 -->
+      <div class="video-box" style="height: 520px;">
+        <div class="header">STREAM 1 - MAIN MATCH</div>
+        <iframe id="iframe1" allowfullscreen allow="autoplay"></iframe>
       </div>
 
-      <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="panel" style="height: 560px;">
-          <div class="header">MAIN MATCH STREAM</div>
-          <iframe id="iframe1" allowfullscreen></iframe>
-        </div>
-        <div class="panel" style="height: 560px;">
-          <div class="header">MAP / OBSERVER STREAM</div>
-          <iframe id="iframe2" allowfullscreen></iframe>
-        </div>
+      <!-- Stream 2 -->
+      <div class="video-box" style="height: 520px;">
+        <div class="header">STREAM 2 - MAP / OBSERVER</div>
+        <iframe id="iframe2" allowfullscreen allow="autoplay"></iframe>
       </div>
     </div>
 
-    <div class="mt-8 bg-zinc-900 rounded-3xl p-6">
-      <h3 class="font-semibold mb-3">ANALYSIS NOTES</h3>
-      <textarea class="w-full h-64 bg-black border border-zinc-700 rounded-2xl p-5" placeholder="Write your analysis here..."></textarea>
+    <!-- Controls -->
+    <div class="mt-8 flex justify-center gap-4">
+      <input id="url1" class="bg-zinc-900 border border-zinc-700 rounded-xl px-5 py-3 w-96" placeholder="Paste Stream 1 YouTube URL">
+      <input id="url2" class="bg-zinc-900 border border-zinc-700 rounded-xl px-5 py-3 w-96" placeholder="Paste Stream 2 YouTube URL">
+      <button onclick="loadStreams()" 
+              class="bg-green-500 hover:bg-green-600 text-black font-bold px-8 py-3 rounded-xl">
+        LOAD STREAMS
+      </button>
+    </div>
+
+    <div class="mt-6 flex justify-center gap-4">
+      <button onclick="playBoth()" class="bg-green-600 hover:bg-green-500 px-8 py-3 rounded-xl font-bold">▶ PLAY BOTH</button>
+      <button onclick="pauseBoth()" class="bg-red-600 hover:bg-red-500 px-8 py-3 rounded-xl font-bold">⏸ PAUSE BOTH</button>
     </div>
   </div>
 
@@ -65,19 +84,21 @@
     function loadStreams() {
       const u1 = document.getElementById('url1').value.trim();
       const u2 = document.getElementById('url2').value.trim();
+      
       if (u1) document.getElementById('iframe1').src = getEmbedUrl(u1);
       if (u2) document.getElementById('iframe2').src = getEmbedUrl(u2);
-      alert("✅ Streams Loaded Successfully!");
+      
+      alert("✅ Streams Loaded! Drag corners to resize.");
     }
 
-    function playAll() {
+    function playBoth() {
       const i1 = document.getElementById('iframe1');
       const i2 = document.getElementById('iframe2');
       if (i1.src) i1.src = i1.src.replace('autoplay=0','autoplay=1') || i1.src + '?autoplay=1';
       if (i2.src) i2.src = i2.src.replace('autoplay=0','autoplay=1') || i2.src + '?autoplay=1';
     }
 
-    function pauseAll() {
+    function pauseBoth() {
       const i1 = document.getElementById('iframe1');
       const i2 = document.getElementById('iframe2');
       if (i1.src) i1.src = i1.src.replace('autoplay=1','autoplay=0');
