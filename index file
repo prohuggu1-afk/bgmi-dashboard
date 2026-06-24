@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BGMI Pro Analysis Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    body { background: #050505; color: white; font-family: system-ui, sans-serif; }
+    .panel { background: #111; border: 2px solid #22c55e; border-radius: 16px; overflow: hidden; resize: both; min-height: 300px; }
+    .header { background: #1a1a1a; padding: 14px 18px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+    iframe { width: 100%; height: calc(100% - 54px); border: none; }
+  </style>
+</head>
+<body class="p-6 min-h-screen">
+  <div class="max-w-screen-2xl mx-auto">
+    <h1 class="text-4xl font-bold text-center mb-8 text-green-400">BGMI PRO ANALYSIS DASHBOARD</h1>
+
+    <div class="flex gap-8">
+      <div class="w-80 bg-zinc-900 rounded-3xl p-6 h-fit border border-zinc-700">
+        <div class="space-y-6">
+          <div>
+            <label class="text-xs text-zinc-400 block mb-2">MAIN MATCH STREAM</label>
+            <input id="url1" class="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3" placeholder="Paste YouTube URL">
+          </div>
+          <div>
+            <label class="text-xs text-zinc-400 block mb-2">MAP / OBSERVER STREAM</label>
+            <input id="url2" class="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3" placeholder="Paste YouTube URL">
+          </div>
+          <button onclick="loadStreams()" class="w-full bg-green-500 hover:bg-green-600 text-black font-bold py-4 rounded-2xl text-lg">LOAD STREAMS</button>
+        </div>
+
+        <div class="mt-8 flex gap-3">
+          <button onclick="playAll()" class="flex-1 bg-green-600 py-3 rounded-2xl font-bold">▶ PLAY BOTH</button>
+          <button onclick="pauseAll()" class="flex-1 bg-red-600 py-3 rounded-2xl font-bold">⏸ PAUSE BOTH</button>
+        </div>
+      </div>
+
+      <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="panel" style="height: 560px;">
+          <div class="header">MAIN MATCH STREAM</div>
+          <iframe id="iframe1" allowfullscreen></iframe>
+        </div>
+        <div class="panel" style="height: 560px;">
+          <div class="header">MAP / OBSERVER STREAM</div>
+          <iframe id="iframe2" allowfullscreen></iframe>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-8 bg-zinc-900 rounded-3xl p-6">
+      <h3 class="font-semibold mb-3">ANALYSIS NOTES</h3>
+      <textarea class="w-full h-64 bg-black border border-zinc-700 rounded-2xl p-5" placeholder="Write your analysis here..."></textarea>
+    </div>
+  </div>
+
+  <script>
+    function getEmbedUrl(url) {
+      if (!url) return '';
+      const match = url.match(/(?:youtu\.be\/|youtube\.com.*v=)([^#\&\?]+)/);
+      return match ? `https://www.youtube.com/embed/${match[1]}?rel=0&modestbranding=1` : url;
+    }
+
+    function loadStreams() {
+      const u1 = document.getElementById('url1').value.trim();
+      const u2 = document.getElementById('url2').value.trim();
+      if (u1) document.getElementById('iframe1').src = getEmbedUrl(u1);
+      if (u2) document.getElementById('iframe2').src = getEmbedUrl(u2);
+      alert("✅ Streams Loaded Successfully!");
+    }
+
+    function playAll() {
+      const i1 = document.getElementById('iframe1');
+      const i2 = document.getElementById('iframe2');
+      if (i1.src) i1.src = i1.src.replace('autoplay=0','autoplay=1') || i1.src + '?autoplay=1';
+      if (i2.src) i2.src = i2.src.replace('autoplay=0','autoplay=1') || i2.src + '?autoplay=1';
+    }
+
+    function pauseAll() {
+      const i1 = document.getElementById('iframe1');
+      const i2 = document.getElementById('iframe2');
+      if (i1.src) i1.src = i1.src.replace('autoplay=1','autoplay=0');
+      if (i2.src) i2.src = i2.src.replace('autoplay=1','autoplay=0');
+    }
+  </script>
+</body>
+</html>
